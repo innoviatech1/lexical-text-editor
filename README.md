@@ -5,8 +5,17 @@ A rich text editor component for React, built on [Lexical](https://lexical.dev/)
 [![npm version](https://img.shields.io/npm/v/@innoviatech/lexical-text-editor)](https://www.npmjs.com/package/@innoviatech/lexical-text-editor)
 [![GitHub stars](https://img.shields.io/github/stars/technohaattech/lexical-text-editor?style=social)](https://github.com/technohaattech/lexical-text-editor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
+[![Live Playground](https://img.shields.io/badge/Playground-Try_it_Live-brightgreen)](https://lexical-text-editor-demo.vercel.app/)
 
 ![Editor Preview](./editor_screenshot.png)
+
+## Live Playground
+
+Use the full editor in the browser before installing anything:
+
+**[https://lexical-text-editor-demo.vercel.app/](https://lexical-text-editor-demo.vercel.app/)**
+
+The playground loads the published npm package directly, so it always shows exactly what `npm install @innoviatech/lexical-text-editor` gives you. You can toggle the theme, switch toolbar layouts, hide status-bar elements, and inspect the HTML output of everything you type.
 
 ## What's New in v3.0
 
@@ -368,6 +377,8 @@ Open an issue at [GitHub Issues](https://github.com/technohaattech/lexical-text-
 - Steps to reproduce
 - Expected vs. actual behavior
 - Relevant code snippets and screenshots, if applicable
+
+Tip: the [live playground](https://lexical-text-editor-demo.vercel.app/) is the fastest way to reproduce editor-only issues without writing any code.
 
 ### Feature Requests
 
