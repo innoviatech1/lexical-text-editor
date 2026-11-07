@@ -490,6 +490,8 @@ export const ToolbarPlugin = ({
     const root = wrapperRef.current;
     if (!root) return;
     for (const svgElem of root.querySelectorAll('.lte-toolbar-row svg:not(.chevron), .lte-overflow-panel svg:not(.chevron)')) {
+      // stepper icons are proportioned by CSS, skip normalization
+      if (svgElem.closest('.lexical-stepper')) continue;
       const svg = svgElem as SVGSVGElement;
       try {
         const vb = svg.viewBox?.baseVal;

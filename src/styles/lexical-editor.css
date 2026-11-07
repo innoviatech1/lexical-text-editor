@@ -440,6 +440,96 @@
   border-radius: 1px;
 }
 
+/* Font size stepper: [-] value [+] (traditional editor pattern).
+   Values run 6-90; "Default" is shown when the selection has no explicit size. */
+.lexical-text-editor .lexical-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  height: 40px; /* matches size-10 tool buttons */
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Tooltip wrappers must not reintroduce spacing/height quirks */
+.lexical-text-editor .lexical-stepper .Lexical-Tooltip-Wrapper {
+  display: flex;
+  height: 100%;
+}
+
+.lexical-text-editor .lexical-stepper-btn {
+  width: 32px;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: rgb(75 85 99);
+  cursor: pointer;
+}
+
+.lexical-text-editor .lexical-stepper-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.lexical-text-editor .lexical-stepper-btn:focus-visible {
+  outline: none;
+  background: #eef2ff;
+}
+
+.lexical-text-editor .lexical-stepper-btn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.lexical-text-editor .lexical-stepper-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.lexical-text-editor .lexical-stepper-value {
+  width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1;
+  color: rgb(55 65 81);
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* Dark mode */
+.lexical-text-editor.lexical-dark .lexical-stepper {
+  background: var(--lte-surface-raised);
+  border-color: var(--lte-border);
+}
+
+.lexical-text-editor.lexical-dark .lexical-stepper-btn {
+  color: var(--lte-text-body);
+}
+
+.lexical-text-editor.lexical-dark .lexical-stepper-btn:hover:not(:disabled) {
+  background: var(--lte-surface-hover);
+}
+
+.lexical-text-editor.lexical-dark .lexical-stepper-btn:focus-visible {
+  background: var(--lte-surface-active);
+}
+
+.lexical-text-editor.lexical-dark .lexical-stepper-btn:disabled {
+  color: var(--lte-text-muted, #9ca3af);
+  opacity: 0.5;
+}
+
+.lexical-text-editor.lexical-dark .lexical-stepper-value {
+  color: var(--lte-text-body);
+}
+
 /* Inside the "..." overflow modal the % height can't resolve (auto-height
    flex lines), so pin the line to 80% of the fixed 40px button height. */
 .lexical-text-editor .lte-overflow-item .lexical-separator {
