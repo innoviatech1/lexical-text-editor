@@ -423,6 +423,29 @@
 /* ------------------------------------------- Button Component ------------------------------------------------ */
 
 
+/* Toolbar group separators — vertical lines between tool groups.
+   Plain CSS (not Tailwind) so the packaged stylesheet is self-sufficient. */
+.lexical-text-editor .lte-toolbar-row > div {
+  /* Segment wrappers must stretch to the row's height so the separator's
+     percentage height resolves (they stay content-centered internally). */
+  align-self: stretch;
+}
+
+.lexical-text-editor .lexical-separator {
+  width: 2px;
+  height: 80%;
+  margin: 0 2px;
+  background-color: var(--lte-border-strong, #d1d5db); /* gray-300 */
+  flex-shrink: 0;
+  border-radius: 1px;
+}
+
+/* Inside the "..." overflow modal the % height can't resolve (auto-height
+   flex lines), so pin the line to 80% of the fixed 40px button height. */
+.lexical-text-editor .lte-overflow-item .lexical-separator {
+  height: 32px;
+}
+
 /* ===========================================
    Base Button (matches shadcn/ui + Tailwind)
 =========================================== */
@@ -738,6 +761,13 @@
   transform: scale(0.95) translateY(-4px);
   transform-origin: top left;
   transition: opacity 0.15s ease, transform 0.15s ease;
+
+  /* Elevated submenu panel — mirrors .popover-content's shadow (theme vars
+     are out of scope here because the portal wrapper lacks the editor class) */
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
 }
 
 .lexical-color-popover.open {
@@ -859,7 +889,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 200; /* above the "..." overflow panel (dialogs open from inside it) */
+    z-index: 400; /* above the "..." overflow panel (dialogs open from inside it) */
   }
 
   /* Dialog */
@@ -1003,7 +1033,7 @@
   position: absolute;
    bottom: -50px;
   right: 20px;
-  z-index: 99;
+  z-index: 400; /* above the "..." overflow panel (the link button can live inside it in collapse mode) */
   display: flex;
   gap: 8px;
   align-items: center;
@@ -1777,6 +1807,7 @@
   display: flex;
   gap: 6px;
   align-items: center;
+  align-self: stretch; /* give lexical-separator's % height something to resolve against */
 }
 
 /* Dark mode */

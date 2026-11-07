@@ -52,6 +52,8 @@ export enum HeadingAction {
   H6 = 'h6',
 }
 
+// "Aa" dropdown: uppercase / lowercase and the remaining text transforms
+// (highlight & strikethrough are now always-visible toolbar buttons).
 export const RICH_TEXT_FORMAT_OPTIONS = [
   {
     id: RichTextAction.Lowercase,
@@ -69,17 +71,6 @@ export const RICH_TEXT_FORMAT_OPTIONS = [
     label: "Capitalize",
   },
   {
-    id: RichTextAction.Strikethrough,
-    icon: <AiOutlineStrikethrough />,
-    label: "Strikethrough",
-  },
-  {
-    id: RichTextAction.Highlight,
-    icon: <PiHighlighterLight />,
-    label: "Highlight",
-    fontSize: 10,
-  },
-  {
     id: RichTextAction.Superscript,
     icon: <BsSuperscript />,
     label: "Superscript",
@@ -89,30 +80,32 @@ export const RICH_TEXT_FORMAT_OPTIONS = [
     icon: <BsSubscript />,
     label: "Subscript",
   },
-
 ];
 
+// Character format buttons (single group)
 export const RICH_TEXT_OPTIONS = [
   { id: RichTextAction.Bold, icon: <TbBold />, label: "Bold" },
   { id: RichTextAction.Italics, icon: <TbItalic />, label: "Italics" },
   { id: RichTextAction.Underline, icon: <TbUnderline />, label: "Underline" },
-  { id: RichTextAction.Divider },
-  { id: RichTextAction.Quote, icon: <BsChatSquareQuote />, label: "Quote" },
-  // { id: RichTextAction.Divider },
+  { id: RichTextAction.Strikethrough, icon: <AiOutlineStrikethrough />, label: "Strikethrough" },
+];
 
+// Standalone highlighter button (own group)
+export const RICH_HIGHLIGHT_OPTIONS = [
   {
-    id: RichTextAction.Code,
-    icon: <IoCodeSlashOutline />,
-    label: "Code",
-  },
-  // { id: RichTextAction.Link, label: "Link", icon: <IoIosLink /> },
-  {
-    id: RichTextAction.ClearFormatting,
-    icon: <RiEraserLine />,
-    label: "Clear Formatting",
+    id: RichTextAction.Highlight,
+    icon: <PiHighlighterLight />,
+    label: "Highlight",
   },
 ];
 
+// Quote / inline-code buttons (rendered next to the code-block dropdown)
+export const RICH_QUOTE_CODE_OPTIONS = [
+  { id: RichTextAction.Quote, icon: <BsChatSquareQuote />, label: "Quote" },
+  { id: RichTextAction.Code, icon: <IoCodeSlashOutline />, label: "Code" },
+];
+
+// Group 1: undo / redo / clear formatting
 export const RICH_REDO_UNDO_OPTIONS = [
   {
     id: RichTextAction.Undo,
@@ -124,11 +117,37 @@ export const RICH_REDO_UNDO_OPTIONS = [
     icon: <BsArrowClockwise />,
     label: "Redo",
   },
-  { id: RichTextAction.Divider },
+  {
+    id: RichTextAction.ClearFormatting,
+    icon: <RiEraserLine />,
+    label: "Clear Formatting",
+  },
 ]
 
-export const RICH_ALIGNMENT_OPTIONS = [
+// Indent / outdent buttons (rendered next to the list buttons)
+export const RICH_BLOCK_OPTIONS = [
+  {
+    id: RichTextAction.Indent,
+    icon: <RiIndentIncrease />,
+    label: "Indent",
+  },
+  {
+    id: RichTextAction.Outdent,
+    icon: <RiIndentDecrease />,
+    label: "Outdent",
+  },
+];
 
+// Horizontal rule button (rendered next to the table picker)
+export const RICH_HLINE_OPTIONS = [
+  {
+    id: RichTextAction.HorizontalRule,
+    icon: <TbSeparatorHorizontal />,
+    label: "Horizontal Rule",
+  },
+];
+
+export const RICH_ALIGNMENT_OPTIONS = [
   {
     id: RichTextAction.LeftAlign,
     icon: <BsJustifyLeft />,
@@ -148,25 +167,6 @@ export const RICH_ALIGNMENT_OPTIONS = [
     id: RichTextAction.JustifyAlign,
     icon: <BsJustify />,
     label: "Justify Align",
-  },
-];
-
-export const RICH_BLOCK_OPTIONS = [
-  {
-    id: RichTextAction.Indent,
-    icon: <RiIndentIncrease />,
-    label: "Indent",
-  },
-  {
-    id: RichTextAction.Outdent,
-    icon: <RiIndentDecrease />,
-    label: "Outdent",
-  },
-  { id: RichTextAction.Divider },
-  {
-    id: RichTextAction.HorizontalRule,
-    icon: <TbSeparatorHorizontal />,
-    label: "Horizontal Rule",
   },
 ];
 

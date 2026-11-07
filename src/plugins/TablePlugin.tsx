@@ -1,6 +1,8 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
+  $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
@@ -54,7 +56,21 @@ export default function TablePlugin() {
     );
   }, [editor]);
 
+  /**
+   * INSERT_TABLE_COMMAND requires an active range selection; a never-touched
+   * editor (no caret) makes the dispatch a silent no-op. The toolbar steals
+   * focus from the editor when its buttons are clicked, so anchor a caret at
+   * the start of the first paragraph before inserting.
+   */
   const insertTable = (rows: number, cols: number) => {
+    editor.update(() => {
+      if (!$isRangeSelection($getSelection())) {
+        const first = $getRoot().getFirstChild();
+        if ($isElementNode(first)) {
+          first.select(0, 0);
+        }
+      }
+    });
     editor.dispatchCommand(INSERT_TABLE_COMMAND, {
       rows: String(rows),
       columns: String(cols),
@@ -98,6 +114,7 @@ export default function TablePlugin() {
       <PopoverTrigger triggerRef={triggerRef}>
         <button
           type="button"
+          aria-label="Insert Table"
           className={`lexical-btn heading-trigger ${insideTable ? "toolbar-active" : "toolbar"}`}
           onClick={() => setOpen((prev) => !prev)}
         >

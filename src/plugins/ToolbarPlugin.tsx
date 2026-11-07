@@ -1,6 +1,6 @@
 
 
-import { HeadingAction, LOW_PRIORIRTY, RICH_BLOCK_OPTIONS, RICH_REDO_UNDO_OPTIONS, RICH_TEXT_OPTIONS, RichTextAction } from "../constants/index"
+import { HeadingAction, LOW_PRIORIRTY, RICH_BLOCK_OPTIONS, RICH_HLINE_OPTIONS, RICH_HIGHLIGHT_OPTIONS, RICH_QUOTE_CODE_OPTIONS, RICH_REDO_UNDO_OPTIONS, RICH_TEXT_OPTIONS, RichTextAction } from "../constants/index"
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
 import { $createParagraphNode, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, CAN_REDO_COMMAND, CAN_UNDO_COMMAND, FORMAT_ELEMENT_COMMAND, FORMAT_TEXT_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, REDO_COMMAND, SELECTION_CHANGE_COMMAND, UNDO_COMMAND } from "lexical"
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
@@ -41,56 +41,65 @@ import ContentPreviewDialog from "../components/ContentPreview"
 import TooltipX from "../components/common/Tooltip"
 
 /**
- * Toolbar segment layout (3.3): items marked `primary` always stay inline
- * (undo/redo, heading, text formats, alignment, link); the rest collapse into
- * the overflow modal from the END of this list towards the front when the
- * toolbar runs out of width.
+ * Toolbar segments (3.4): visual order fixed by `SEGMENTS` below. Groups are
+ * separated by a vertical `Separator` line; every segment marked `sep: true`
+ * starts a new group and renders its group line to its left (undo/redo is
+ * the anchor group, rendered in `primaryRef`).
+ *
+ *  1. undo, redo, clear format            (primaryRef — never collapsed)
+ *  2. | headings, font family, font size
+ *  3. | bold, italic, underline, strikethrough
+ *  4. | uppercase, lowercase & others ("Aa" modal)
+ *  5. | text color, bg color, highlight
+ *  6. | quote, code, code-block
+ *  7. | alignments
+ *  8. | ordered list, unordered list, indent, outdent
+ *  9. | table, horizontal rule
+ * 10. | link, image, embed video
+ * 11. | search, source code, fullscreen, preview
+ *
+ * The list order must remain strictly left-to-right in every toolbar style
+ * (wrap / collapse / scrollbar); only collapse priority (COLLAPSIBLE_IDS) is
+ * a separate axis.
  */
-const SEGMENTS: { id: string; primary?: boolean }[] = [
+const SEGMENTS: { id: string; sep?: boolean }[] = [
+  // Group 2: headings, font family, font size
+  { id: 'headings', sep: true },
   { id: 'fontFamily' },
   { id: 'fontSize' },
-  { id: 'color' },
-  { id: 'textFormats', primary: true },
-  { id: 'dropdown' },
-  { id: 'lists' },
-  { id: 'blockOptions' },
-  { id: 'primaryAlignment', primary: true },
-  { id: 'primaryLink', primary: true },
+  // Group 3: bold, italic, underline, strikethrough
+  { id: 'textFormats', sep: true },
+  // Group 4: uppercase / lowercase & others (Aa dropdown)
+  { id: 'dropdown', sep: true },
+  // Group 5: text color, bg color, highlight
+  { id: 'color', sep: true },
+  // Group 6: quote, code, code-block
+  { id: 'quoteCode', sep: true },
   { id: 'codeBlock' },
+  // Group 7: alignments
+  { id: 'alignment', sep: true },
+  // Group 8: ordered/unordered list, indent, outdent
+  { id: 'lists', sep: true },
+  { id: 'blockOptions' },
+  // Group 9: table, horizontal rule
+  { id: 'table', sep: true },
+  { id: 'hline' },
+  // Group 10: link, image, embed video
+  { id: 'link', sep: true },
   { id: 'image' },
   { id: 'video' },
-  { id: 'table' },
-  { id: 'utility' },
+  // Group 11: search, source code, fullscreen, preview
+  { id: 'utility', sep: true },
   { id: 'preview' },
 ];
-const NON_PRIMARY_IDS = SEGMENTS.filter((s) => !s.primary).map((s) => s.id);
 /**
- * Visual order of segments is fixed by `SEGMENTS` above (standard compact
- * editor order: heading block, then fonts/colours, then character formats,
- * then the "Aa" extras, lists/indent, alignment, link, inserts, utilities).
- *
- * Collapse priority is a separate axis — hidden from the END of this list
- * first (inserts/utilities go before formatting tools). `textFormats` is
- * hidden last; only undo/redo + the heading picker are never collapsed, so
- * the row always fits instead of scrolling in "normal" mode.
+ * Collapse priority (3.4) — visual order. Collapse mode shows a CONTIGUOUS
+ * prefix of the wrap layout: the first groups that fit stay in the row,
+ * everything from the first non-fitting segment onward is hidden into the
+ * "..." modal. `COLLAPSIBLE_IDS` is therefore simply `SEGMENTS` order, and
+ * the undo group (rendered in `primaryRef`) is never collapsed.
  */
-const COLLAPSIBLE_IDS = [
-  'textFormats',
-  'lists',
-  'primaryAlignment',
-  'primaryLink',
-  'fontFamily',
-  'fontSize',
-  'color',
-  'dropdown',
-  'codeBlock',
-  'blockOptions',
-  'image',
-  'video',
-  'table',
-  'utility',
-  'preview',
-];
+const SEGMENT_IDS = SEGMENTS.map((s) => s.id);
 const SEGMENT_GAP = 6;
 const ELLIPSIS_FALLBACK_WIDTH = 40;
 
@@ -339,7 +348,7 @@ export const ToolbarPlugin = ({
     if (available <= 0) return;
 
     const primaryWidth = primaryRef.current ? primaryRef.current.offsetWidth : 0;
-    const widths = COLLAPSIBLE_IDS.map((id) => {
+    const widths = SEGMENT_IDS.map((id) => {
       const el = segmentRefs.current[id];
       if (el && el.style.display !== 'none') {
         widthCache.current[id] = el.offsetWidth;
@@ -352,19 +361,20 @@ export const ToolbarPlugin = ({
     const ellipsisWidth = ellipsisWidthRef.current || ELLIPSIS_FALLBACK_WIDTH;
 
     const computeTotal = (k: number) => {
-      const visibleCount = 1 + (k > 0 ? 1 : 0) + (COLLAPSIBLE_IDS.length - k);
+      // k segments (from the visual end) are hidden in the modal
+      const visibleCount = 1 + (k > 0 ? 1 : 0) + (SEGMENT_IDS.length - k);
       let total =
         primaryWidth +
         Math.max(0, visibleCount - 1) * SEGMENT_GAP +
         (k > 0 ? ellipsisWidth : 0);
-      for (let i = 0; i < COLLAPSIBLE_IDS.length - k; i++) {
+      for (let i = 0; i < SEGMENT_IDS.length - k; i++) {
         total += widths[i];
       }
       return total;
     };
 
     let k = collapsedCount;
-    while (k < COLLAPSIBLE_IDS.length && computeTotal(k) > available) k++;
+    while (k < SEGMENT_IDS.length && computeTotal(k) > available) k++;
     while (k > 0 && computeTotal(k - 1) <= available) k--;
     setCollapsedCount((prev) => (prev === k ? prev : k));
   }, [collapsedCount, normalizedToolbarStyle]);
@@ -721,12 +731,21 @@ export const ToolbarPlugin = ({
 
   //      <div className="flex gap-1.5 justify-start items-center p-1.5 pb-2 mb-1 border-b-[1px] overflow-x-auto overflow-y-hidden scrollbar-thin">
 
+  // Contiguous suffix rule: the last `collapsedCount` segments (visual order)
+  // are hidden into the "..." modal, so collapse matches the wrap layout.
   const isSegmentHidden = (id: string) => {
-    const pos = COLLAPSIBLE_IDS.indexOf(id);
-    return pos >= COLLAPSIBLE_IDS.length - collapsedCount;
+    const pos = SEGMENT_IDS.indexOf(id);
+    return pos >= SEGMENT_IDS.length - collapsedCount;
   };
 
   const segmentNodes: Record<string, ReactNode> = {
+    // Group 2: headings, font family, font size
+    headings: (
+      <HeadingSelectionList updateHeading={updateHeading} headingSelectionMap={headingSelectionMap} />
+    ),
+    fontFamily: <FontFamilyPlugin />,
+    fontSize: <FontSizePlugin />,
+    // Group 3: bold, italic, underline, strikethrough
     textFormats: (
       <>
         {
@@ -745,25 +764,52 @@ export const ToolbarPlugin = ({
         }
       </>
     ),
-    primaryAlignment: (
+    // Group 4: uppercase / lowercase & others ("Aa" modal)
+    dropdown: <DropdownList onAction={onAction} selectionMap={selectionMap} />,
+    // Group 5: text color, bg color + highlight
+    color: (
       <>
-        <AlignmentSelectionList onAction={onAction} alignmentSelectionMap={selectionMap} />
-        <Separator />
+        <ColorPlugin />
+        {
+          RICH_HIGHLIGHT_OPTIONS.map(({ id, label, icon }) => (
+            <TooltipX key={id} content={label} direction="bottom">
+              <button type="button"
+                className={`size-10 lexical-btn ${selectionMap[id] ? "toolbarActive" : "toolbar"
+                  } icon`}
+                onClick={() => onAction(id)}
+              >
+                {icon}
+              </button>
+            </TooltipX>
+          ))
+        }
       </>
     ),
-    primaryLink: (
-      <TooltipX content="Link" direction="bottom">
-        <button type="button"
-          className={`size-10 lexical-btn ${selectionMap[RichTextAction.Link] ? "toolbarActive" : "toolbar"
-            } icon`}
-          onClick={() => onAction(RichTextAction.Link)}
-          disabled={!!disableMap[RichTextAction.Link]}
-        >
-          {<IoIosLink />}
-        </button>
-      </TooltipX>
+    // Group 6: quote, code + code-block dropdown
+    quoteCode: (
+      <>
+        {
+          RICH_QUOTE_CODE_OPTIONS.map(({ id, label, icon }) => (
+            <TooltipX key={id} content={label} direction="bottom">
+              <button type="button"
+                className={`size-10 lexical-btn ${selectionMap[id] ? "toolbarActive" : "toolbar"
+                  } icon`}
+                onClick={() => onAction(id)}
+              >
+                {icon}
+              </button>
+            </TooltipX>
+          ))
+        }
+      </>
     ),
-    lists: (<><ListPlugin blockType={blockType} /><Separator /></>),
+    codeBlock: <CodeBlockPlugin />,
+    // Group 8: alignments
+    alignment: (
+      <AlignmentSelectionList onAction={onAction} alignmentSelectionMap={selectionMap} />
+    ),
+    // Group 9: ordered/unordered list + indent, outdent
+    lists: <ListPlugin blockType={blockType} />,
     blockOptions: (
       <>
         {
@@ -782,17 +828,43 @@ export const ToolbarPlugin = ({
         }
       </>
     ),
-    fontFamily: <FontFamilyPlugin />,
-    fontSize: <FontSizePlugin />,
-    color: <ColorPlugin />,
-    codeBlock: <CodeBlockPlugin />,
-    dropdown: <DropdownList onAction={onAction} selectionMap={selectionMap} />,
+    // Group 10: table + horizontal rule
+    table: <TablePlugin />,
+    hline: (
+      <>
+        {
+          RICH_HLINE_OPTIONS.map(({ id, label, icon }) => (
+            <TooltipX key={id} content={label} direction="bottom">
+              <button type="button"
+                className={`size-10 lexical-btn ${selectionMap[id] ? "toolbarActive" : "toolbar"
+                  } icon`}
+                onClick={() => onAction(id)}
+              >
+                {icon}
+              </button>
+            </TooltipX>
+          ))
+        }
+      </>
+    ),
+    // Group 11: link, image, embed video
+    link: (
+      <TooltipX content="Link" direction="bottom">
+        <button type="button"
+          className={`size-10 lexical-btn ${selectionMap[RichTextAction.Link] ? "toolbarActive" : "toolbar"
+            } icon`}
+          onClick={() => onAction(RichTextAction.Link)}
+          disabled={!!disableMap[RichTextAction.Link]}
+        >
+          {<IoIosLink />}
+        </button>
+      </TooltipX>
+    ),
     image: <ImagePlugin onImageUpload={onImageUpload} />,
     video: <VideoPlugin />,
-    table: <TablePlugin />,
+    // Group 12: search, source code, fullscreen + preview
     utility: (
       <>
-        <Separator />
         <TooltipX content="Find & Replace" direction="bottom">
           <button type="button"
             aria-label="Find & Replace"
@@ -840,6 +912,7 @@ export const ToolbarPlugin = ({
       <div
         ref={rowRef}
         className={`lte-toolbar-row ${isScrollbarMode ? "useScroll" : normalizedToolbarStyle === 'collapse' ? "lte-nowrap" : "lte-wrap"}`}
+        onMouseDown={(e) => e.preventDefault()}
       >
         <div ref={primaryRef} className="lte-toolbar-primary" style={{ display: 'flex', gap: 6, justifyContent: 'start', alignItems: 'center' }}>
           {
@@ -857,14 +930,9 @@ export const ToolbarPlugin = ({
                 </TooltipX>
             ))
           }
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'start', alignItems: 'center' }}>
-
-            <HeadingSelectionList updateHeading={updateHeading} headingSelectionMap={headingSelectionMap} />
-            <Separator />
-          </div>
         </div>
 
-        {SEGMENTS.map(({ id }) => {
+        {SEGMENTS.map(({ id, sep }) => {
           const hidden = isSegmentHidden(id);
           return (
             <div
@@ -874,6 +942,7 @@ export const ToolbarPlugin = ({
                 ? { display: 'none' }
                 : { display: 'flex', gap: 6, justifyContent: 'start', alignItems: 'center' }}
             >
+              {sep ? <Separator /> : null}
               {hidden ? null : segmentNodes[id]}
             </div>
           );
@@ -935,10 +1004,12 @@ export const ToolbarPlugin = ({
       {overflowOpen &&
         <ToolbarOverflowModal anchorRef={ellipsisRef} onClose={() => setOverflowOpen(false)}>
           {SEGMENTS
-            .map(({ id }) => id)
-            .filter((id) => isSegmentHidden(id) && segmentNodes[id])
-            .map((id) => (
-              <div key={id} className="lte-overflow-item">{segmentNodes[id]}</div>
+            .filter(({ id }) => isSegmentHidden(id) && segmentNodes[id])
+            .map(({ id, sep }, i) => (
+              <div key={id} className="lte-overflow-item">
+                {sep && i > 0 ? <Separator /> : null}
+                {segmentNodes[id]}
+              </div>
             ))}
         </ToolbarOverflowModal>}
 

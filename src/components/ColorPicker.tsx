@@ -45,12 +45,13 @@ export default function ColorPicker({ color, onChange, icon }: ColorPickerProps)
           <div
             ref={popoverRef}
             className={`lexical-color-popover ${open ? "open" : ""}`}
+            data-lte-popover-portal="true"
             style={{
               top: triggerRef.current?.getBoundingClientRect().bottom,
               left: triggerRef.current?.getBoundingClientRect().left,
               position: "absolute",
             }}
-            onMouseDown={preventFocus}
+            onMouseDown={(e) => { e.preventDefault(); preventFocus(e); }}
           >
             <SketchPicker
               color={color}

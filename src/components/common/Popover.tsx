@@ -133,6 +133,8 @@ export function PopoverContent({
     <div
       ref={wrapperRef}
       className={`lexical-text-editor${dark ? " lexical-dark" : ""}`}
+      data-lte-popover-portal="true"
+      onMouseDown={(e) => e.preventDefault()}
       style={{
         position: "fixed",
         top: 0,
@@ -153,7 +155,7 @@ export function PopoverContent({
           (contentRef as { current: HTMLDivElement | null }).current = node;
         }}
         className="popover-content"
-        style={{ position: "static", top: "auto", left: "auto", borderRadius: 6, border: "none", boxShadow: "none", margin: 0, width: "100%" }}
+        style={{ position: "static", top: "auto", left: "auto", borderRadius: 6, border: "none", margin: 0, width: "100%" }}
       >
         {children}
       </div>

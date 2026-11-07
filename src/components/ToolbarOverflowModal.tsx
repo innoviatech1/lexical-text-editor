@@ -19,6 +19,13 @@ export default function ToolbarOverflowModal({ anchorRef, onClose, children }: T
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
       const target = event.target as Node;
+      // Portaled submenu popovers (headings / Aa / code-block / table / colors)
+      // mount under <body>, so they are technically "outside" this panel.
+      // Never close the panel while the user is clicking one of them, or the
+      // unmount race kills their click before it fires (e.g. table grid).
+      if (target instanceof HTMLElement && target.closest('[data-lte-popover-portal]')) {
+        return;
+      }
       if (panelRef.current && !panelRef.current.contains(target) &&
         !(anchorRef.current && anchorRef.current.contains(target))) {
         onClose();
@@ -36,7 +43,7 @@ export default function ToolbarOverflowModal({ anchorRef, onClose, children }: T
   }, [anchorRef, onClose]);
 
   return (
-    <div ref={panelRef} className="lte-overflow-panel">
+    <div ref={panelRef} className="lte-overflow-panel" onMouseDown={(e) => e.preventDefault()}>
       <div className="lte-overflow-grid">
         {children}
       </div>
