@@ -38,49 +38,46 @@ export declare enum HeadingAction {
     H5 = "h5",
     H6 = "h6"
 }
-export declare const RICH_TEXT_FORMAT_OPTIONS: ({
+export declare const RICH_TEXT_FORMAT_OPTIONS: {
     id: RichTextAction;
     icon: import("react/jsx-runtime").JSX.Element;
     label: string;
-    fontSize?: undefined;
-} | {
+}[];
+export declare const RICH_TEXT_OPTIONS: {
     id: RichTextAction;
     icon: import("react/jsx-runtime").JSX.Element;
     label: string;
-    fontSize: number;
-})[];
-export declare const RICH_TEXT_OPTIONS: ({
+}[];
+export declare const RICH_HIGHLIGHT_OPTIONS: {
     id: RichTextAction;
     icon: import("react/jsx-runtime").JSX.Element;
     label: string;
-} | {
-    id: RichTextAction;
-    icon?: undefined;
-    label?: undefined;
-})[];
-export declare const RICH_REDO_UNDO_OPTIONS: ({
+}[];
+export declare const RICH_QUOTE_CODE_OPTIONS: {
     id: RichTextAction;
     icon: import("react/jsx-runtime").JSX.Element;
     label: string;
-} | {
+}[];
+export declare const RICH_REDO_UNDO_OPTIONS: {
     id: RichTextAction;
-    icon?: undefined;
-    label?: undefined;
-})[];
+    icon: import("react/jsx-runtime").JSX.Element;
+    label: string;
+}[];
+export declare const RICH_BLOCK_OPTIONS: {
+    id: RichTextAction;
+    icon: import("react/jsx-runtime").JSX.Element;
+    label: string;
+}[];
+export declare const RICH_HLINE_OPTIONS: {
+    id: RichTextAction;
+    icon: import("react/jsx-runtime").JSX.Element;
+    label: string;
+}[];
 export declare const RICH_ALIGNMENT_OPTIONS: {
     id: RichTextAction;
     icon: import("react/jsx-runtime").JSX.Element;
     label: string;
 }[];
-export declare const RICH_BLOCK_OPTIONS: ({
-    id: RichTextAction;
-    icon: import("react/jsx-runtime").JSX.Element;
-    label: string;
-} | {
-    id: RichTextAction;
-    icon?: undefined;
-    label?: undefined;
-})[];
 export declare const LOW_PRIORIRTY = 1;
 export declare const HEADINGS: {
     id: string;
