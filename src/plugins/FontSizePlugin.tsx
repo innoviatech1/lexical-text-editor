@@ -1,7 +1,7 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getSelection, $isRangeSelection, SELECTION_CHANGE_COMMAND } from 'lexical';
 import { $patchStyleText, $getSelectionStyleValueForProperty } from '@lexical/selection'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { mergeRegister } from '@lexical/utils';
 import { LOW_PRIORIRTY } from '../constants';
 import TooltipX from "../components/common/Tooltip";
@@ -15,6 +15,9 @@ const DEFAULT_BASE_SIZE = 16;
 export default function FontSizePlugin() {
   const [editor] = useLexicalComposerContext();
   const [fontSize, setFontSize] = useState("");
+  /** In-progress text typed into the size input; null while not editing. */
+  const [draftValue, setDraftValue] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const updateToolbar = () => {
     const selection = $getSelection();
@@ -37,6 +40,11 @@ export default function FontSizePlugin() {
         }
       }
       setFontSize(normalizeFontSize(effective))
+      // Selection moved → drop any stale in-progress typing (unless the user
+      // is actively typing in the input right now)
+      if (document.activeElement !== inputRef.current) {
+        setDraftValue(null)
+      }
     }
   }
   useEffect(() => {
@@ -72,13 +80,30 @@ export default function FontSizePlugin() {
   };
 
   /**
-   * +/- stepper: steps ±1px from the selection's current explicit size.
+   * +/- stepper: steps ±1px from the input's current value (or the
+   * selection's committed size when the input is empty/invalid).
    * A selection without an explicit size starts from the default base.
    */
   const stepFontSize = (delta: number) => {
-    const current = Number.parseInt(fontSize, 10);
+    const raw = draftValue ?? fontSize;
+    const current = Number.parseInt(raw, 10);
     const base = Number.isNaN(current) ? DEFAULT_BASE_SIZE : current;
     applyFontSize(base + delta);
+  };
+
+  /**
+   * Commits the value typed into the input: clamps to 6-90 and applies it
+   * to the selection. Invalid/empty input just reverts to the last value.
+   */
+  const commitDraft = () => {
+    const raw = draftValue;
+    setDraftValue(null);
+    if (raw === null) return;
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isNaN(parsed)) return; // revert to selection value
+    const committed = Number.parseInt(fontSize, 10);
+    if (parsed === committed) return; // nothing changed
+    applyFontSize(parsed);
   };
 
   const displayedSize = Number.parseInt(fontSize, 10);
@@ -97,9 +122,37 @@ export default function FontSizePlugin() {
           <LuMinus />
         </button>
       </TooltipX>
-      <span className="lexical-stepper-value">
-        {currentSize ?? "—"}
-      </span>
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        className="lexical-stepper-value lexical-stepper-input"
+        aria-label="Font size in pixels"
+        placeholder="—"
+        title="Click to type a size (6-90), then press Enter"
+        value={draftValue ?? (currentSize !== null ? String(currentSize) : "")}
+        onChange={(e) => setDraftValue(e.target.value.replace(/[^\d]/g, ""))}
+        onFocus={(e) => e.currentTarget.select()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commitDraft();
+            e.currentTarget.blur();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            setDraftValue(null);
+            e.currentTarget.blur();
+          } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            // ↑/↓ step the size like the +/- buttons
+            e.preventDefault();
+            commitDraft();
+            stepFontSize(e.key === "ArrowUp" ? 1 : -1);
+          }
+          // stop toolbar/editor hotkeys from swallowing plain typing
+          e.stopPropagation();
+        }}
+        onBlur={commitDraft}
+      />
       <TooltipX content="Increase font size" direction="bottom">
         <button
           type="button"

@@ -4,6 +4,7 @@ import { HeadingAction, LOW_PRIORIRTY, RICH_BLOCK_OPTIONS, RICH_HLINE_OPTIONS, R
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
 import { $createParagraphNode, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, CAN_REDO_COMMAND, CAN_UNDO_COMMAND, FORMAT_ELEMENT_COMMAND, FORMAT_TEXT_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, REDO_COMMAND, SELECTION_CHANGE_COMMAND, UNDO_COMMAND } from "lexical"
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { OverflowCloseContext } from "./toolbarOverflowContext"
 import { $getNearestNodeOfType, mergeRegister } from '@lexical/utils'
 import { type HeadingTagType, $createHeadingNode, $isHeadingNode } from '@lexical/rich-text'
 import { $wrapNodes } from '@lexical/selection'
@@ -141,6 +142,7 @@ export const ToolbarPlugin = ({
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [collapsedCount, setCollapsedCount] = useState(0);
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const closeOverflow = useCallback(() => setOverflowOpen(false), []);
   const rowRef = useRef<HTMLDivElement | null>(null);
   const primaryRef = useRef<HTMLDivElement | null>(null);
   const ellipsisRef = useRef<HTMLButtonElement | null>(null);
@@ -903,6 +905,7 @@ export const ToolbarPlugin = ({
   };
 
   return (
+    <OverflowCloseContext.Provider value={closeOverflow}>
     <div
       ref={wrapperRef}
       className="lexical-toolbar-wrapper"
@@ -914,7 +917,11 @@ export const ToolbarPlugin = ({
       <div
         ref={rowRef}
         className={`lte-toolbar-row ${isScrollbarMode ? "useScroll" : normalizedToolbarStyle === 'collapse' ? "lte-nowrap" : "lte-wrap"}`}
-        onMouseDown={(e) => e.preventDefault()}
+        onMouseDown={(e) => {
+          // preventDefault keeps the editor selection when clicking buttons,
+          // but must not block native focus on text inputs (font-size field)
+          if ((e.target as HTMLElement).tagName !== 'INPUT') e.preventDefault();
+        }}
       >
         <div ref={primaryRef} className="lte-toolbar-primary" style={{ display: 'flex', gap: 6, justifyContent: 'start', alignItems: 'center' }}>
           {
@@ -1023,6 +1030,7 @@ export const ToolbarPlugin = ({
 
       {/* <YoutubePlugin /> */}
     </div>
+    </OverflowCloseContext.Provider>
   )
 }
 

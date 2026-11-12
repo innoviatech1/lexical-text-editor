@@ -4,7 +4,7 @@ import { $patchStyleText, $getSelectionStyleValueForProperty } from '@lexical/se
 import { useEffect, useState } from 'react';
 import { mergeRegister } from '@lexical/utils';
 import { LOW_PRIORIRTY } from '../constants';
-import { RiFontFamily } from 'react-icons/ri';
+import { BsFonts } from 'react-icons/bs';
 import { FontSelectionList, type FontOption } from '../components/FontSelectionList';
 
 const FONT_FAMILY_OPTIONS: FontOption[] = [
@@ -65,7 +65,7 @@ export default function FontFamilyPlugin() {
 
   return (
     <FontSelectionList
-      icon={<RiFontFamily />}
+      icon={<BsFonts />}
       tooltipLabel="Font Family"
       currentValue={fontFamily}
       options={FONT_FAMILY_OPTIONS}

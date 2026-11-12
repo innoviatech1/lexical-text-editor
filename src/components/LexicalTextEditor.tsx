@@ -16,6 +16,7 @@ import { TableCellNode, TableNode, TableRowNode } from "@lexical/table"
 import { ToolbarPlugin } from "../plugins/ToolbarPlugin"
 import { LinkNode } from "@lexical/link"
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin"
+import InlineCodeExitPlugin from "../plugins/InlineCodeExitPlugin"
 import CustomOnChangePlugin from "../plugins/CustomOnChangePlugin"
 import SourceView from "./SourceView"
 import StatusBar from "./StatusBar"
@@ -254,6 +255,7 @@ export const LexicalTextEditor: React.FC<LexiTexProps> = React.memo(
           <LexicalTablePlugin />
           <HorizontalRulePlugin />
           <LinkPlugin />
+          <InlineCodeExitPlugin />
           <CustomOnChangePlugin value={value} onChange={onChange} />
         </LexicalComposer>
       </div>

@@ -276,7 +276,9 @@
   border: 1px solid #d1d5db;
   padding: 0 0.25rem;
   border-radius: 0.25rem;
-  font-size: 0.875rem;
+  /* No font-size here: it would override the text node's inline font-size,
+     breaking the toolbar's font-size stepper inside inline code pills.
+     The pill inherits the surrounding text size instead. */
   font-family: monospace;
   color: #000;
 }
@@ -491,7 +493,6 @@
 }
 
 .lexical-text-editor .lexical-stepper-value {
-  width: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -501,6 +502,52 @@
   color: rgb(55 65 81);
   user-select: none;
   white-space: nowrap;
+}
+
+/* The value slot is an editable input: strip browser chrome, keep
+   typing/selecting native, and read as a small input box on hover/focus. */
+.lexical-text-editor input.lexical-stepper-value.lexical-stepper-input {
+  width: 44px;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  color: rgb(55 65 81);
+  font-size: 14px;
+  font-family: inherit;
+  text-align: center;
+  user-select: text;
+  cursor: text;
+  border-radius: 0;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Hover/focus affordance so the field reads as editable, not a label */
+.lexical-text-editor input.lexical-stepper-value.lexical-stepper-input:hover {
+  background: #f3f4f6;
+  box-shadow: inset 0 0 0 1px #d1d5db;
+}
+
+.lexical-text-editor input.lexical-stepper-value.lexical-stepper-input:focus {
+  background: #ffffff;
+  box-shadow: inset 0 0 0 2px #6366f1;
+}
+
+.lexical-text-editor input.lexical-stepper-value.lexical-stepper-input::placeholder {
+  color: #9ca3af;
+}
+
+.lexical-text-editor input.lexical-stepper-value.lexical-stepper-input::selection {
+  background: #c7d2fe;
+}
+
+/* Visible focus ring on the whole stepper while the size input has focus */
+.lexical-text-editor .lexical-stepper:has(input.lexical-stepper-input:focus) {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
 }
 
 /* Dark mode */
@@ -528,6 +575,37 @@
 
 .lexical-text-editor.lexical-dark .lexical-stepper-value {
   color: var(--lte-text-body);
+}
+
+.lexical-text-editor.lexical-dark input.lexical-stepper-value.lexical-stepper-input {
+  color: var(--lte-text-body);
+}
+
+.lexical-text-editor.lexical-dark input.lexical-stepper-value.lexical-stepper-input:hover {
+  background: var(--lte-surface-hover);
+  box-shadow: inset 0 0 0 1px var(--lte-border, #4b5563);
+}
+
+.lexical-text-editor.lexical-dark input.lexical-stepper-value.lexical-stepper-input:focus {
+  background: var(--lte-surface-raised, transparent);
+  box-shadow: inset 0 0 0 2px #818cf8;
+}
+
+.lexical-text-editor.lexical-dark input.lexical-stepper-value.lexical-stepper-input::placeholder {
+  color: var(--lte-text-muted, #9ca3af);
+}
+
+.lexical-text-editor.lexical-dark input.lexical-stepper-value.lexical-stepper-input::selection {
+  background: rgba(99, 102, 241, 0.45);
+}
+
+.lexical-text-editor.lexical-dark input.lexical-stepper-value.lexical-stepper-input::selection {
+  background: rgba(99, 102, 241, 0.45);
+}
+
+.lexical-text-editor.lexical-dark .lexical-stepper:has(input.lexical-stepper-input:focus) {
+  border-color: var(--lte-border-strong, #818cf8);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
 }
 
 /* Inside the "..." overflow modal the % height can't resolve (auto-height
@@ -1109,6 +1187,18 @@
   max-width: none;
   line-height: 1.6;
   text-align: start;
+}
+
+/* Exported table cells carry Lexical's default inline `border: 1px solid black`,
+   which ignores the editor theme — re-skin them to match (light + dark). */
+.lexical-text-editor .lexical-text-editor-html-preview .lexical-table td,
+.lexical-text-editor .lexical-text-editor-html-preview .lexical-table th {
+  border: 1px solid #d1d5db !important;
+}
+
+.lexical-text-editor.lexical-dark .lexical-text-editor-html-preview .lexical-table td,
+.lexical-text-editor.lexical-dark .lexical-text-editor-html-preview .lexical-table th {
+  border-color: var(--lte-border-strong) !important;
 }
 
 
@@ -1814,12 +1904,15 @@
 
 /* Wrap variant (toolbarStyle="wrap", default): all tools flow serially and
    overflowed buttons wrap onto extra lines (flex-wrap). No clipping, no
-   scrolling, no overflow-collapse. */
+   scrolling, no overflow-collapse. `safe center` keeps wrapped lines
+   centered like the collapse variant, falling back to flex-start when the
+   content overflows so nothing clips off either edge. */
 .lexical-toolbar-wrapper .lte-toolbar-row.lte-wrap {
   flex-wrap: wrap;
   overflow-x: visible;
   overflow-y: visible;
   justify-content: flex-start;
+  justify-content: safe center;
   row-gap: 6px;
 }
 

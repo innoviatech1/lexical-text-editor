@@ -1,7 +1,9 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   $createParagraphNode,
+  $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
@@ -10,6 +12,7 @@ import { $createCodeNode, $isCodeNode } from "@lexical/code";
 import { useEffect, useRef, useState } from "react";
 import { mergeRegister } from "@lexical/utils";
 import { CODE_BLOCK_LANGUAGES, LOW_PRIORIRTY } from "../constants";
+import { useCloseToolbarOverflow } from "./toolbarOverflowContext";
 import { HiChevronDown } from "react-icons/hi2";
 import { IoCodeSlashOutline } from "react-icons/io5";
 import {
@@ -20,6 +23,7 @@ import {
 
 export default function CodeBlockPlugin() {
   const [editor] = useLexicalComposerContext();
+  const closeOverflow = useCloseToolbarOverflow();
   const [isActive, setIsActive] = useState(false);
   const [language, setLanguage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -58,8 +62,21 @@ export default function CodeBlockPlugin() {
     );
   }, [editor]);
 
+  /**
+   * Toggling to a code block requires an active range selection; a
+   * never-touched editor (no caret) makes $setBlocksType a silent no-op.
+   * Same issue the table had: the toolbar steals focus from the editor when
+   * its buttons are clicked, so anchor a caret at the start of the first
+   * paragraph before converting.
+   */
   const toggleCodeBlock = (lang?: string | null) => {
     editor.update(() => {
+      if (!$isRangeSelection($getSelection())) {
+        const first = $getRoot().getFirstChild();
+        if ($isElementNode(first)) {
+          first.select(0, 0);
+        }
+      }
       const selection = $getSelection();
       if (!$isRangeSelection(selection)) return;
 
@@ -75,11 +92,21 @@ export default function CodeBlockPlugin() {
         $setBlocksType(selection, () => $createCodeNode(languageToUse));
       }
     });
+    closeOverflow();
   };
 
   const applyLanguage = (lang: string) => {
     setLanguage(lang);
     editor.update(() => {
+      // Selecting a language directly from normal text must ALSO create the
+      // code block (standard dropdown behavior) — not just re-label an
+      // existing one. Anchor a caret first for the never-focused editor case.
+      if (!$isRangeSelection($getSelection())) {
+        const first = $getRoot().getFirstChild();
+        if ($isElementNode(first)) {
+          first.select(0, 0);
+        }
+      }
       const selection = $getSelection();
       if (!$isRangeSelection(selection)) return;
 
@@ -88,8 +115,13 @@ export default function CodeBlockPlugin() {
         anchorNode.getKey() === "root"
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
-      if ($isCodeNode(element)) element.setLanguage(lang);
+      if ($isCodeNode(element)) {
+        element.setLanguage(lang);
+      } else {
+        $setBlocksType(selection, () => $createCodeNode(lang));
+      }
     });
+    closeOverflow();
   };
 
   const activeLabel =
